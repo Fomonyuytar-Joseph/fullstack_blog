@@ -72,7 +72,7 @@ db.query(q,[values],(err,data)=>{
 
 export const login = async (req, res) => {
   const { password, username } = req.body;
-  console.log(req.body);
+  // console.log(req.body);
 
   const q = "SELECT * FROM users WHERE  username = ? ";
 
@@ -103,9 +103,13 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = await jwt.sign({ id: data[0].id }, "jwtkey");
+    const token =  jwt.sign({ id: data[0].id }, "jwtkey");
 
-    return res.json({
+   
+
+    res.cookie("access_token", token,{
+      httpOnly: true,
+    }).status(200).json({
       status: "success",
       message: "sucessfuly logged in",
       token: token,
@@ -117,8 +121,11 @@ export const login = async (req, res) => {
 
 
 export const logout = (req, res) => {
-  res.json({
-    status: "status",
-    mesage: "logout user",
+  res.clearCookie("access_token",{
+    sameSite:'none',
+    secure:true,
+  }).json({
+    status: "success",
+    mesage: "User has been logged out",
   });
 };
