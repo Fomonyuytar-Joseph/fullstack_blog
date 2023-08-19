@@ -1,4 +1,5 @@
 import { db } from "../db.js";
+import jwt from 'jsonwebtoken'
 export const getPosts = (req, res) => {
 
 
@@ -16,6 +17,7 @@ const q = req.query.cat
 
      res.status(200).json({
        status: "success",
+       results:data.length,
        data,
      });
   });
@@ -32,7 +34,7 @@ export const getPost = (req, res) => {
 
   db.query(q,[req.params.id *1],(err,data)=>{
      if (err) {
-       return res.status(400).json({
+       return res.status(500).json({
          status: "fail",
          mesage: err,
        });
@@ -40,6 +42,7 @@ export const getPost = (req, res) => {
 
      return res.status(200).json({
        status: "status",
+       results:data.length,
        data
      });
     
@@ -53,7 +56,45 @@ export const addPost = (req, res) => {
   });
 };
 export const deletePost = (req, res) => {
-  res.json({
+  const token = req.cookies.access_token;
+  
+  if(!token){
+    return res.status(401).json({
+      status:'fail',
+      message:'not authenticated'
+    })
+
+
+  }
+
+  jwt.verify(token, "jwtkey",(err,userInfo)=>{
+    if(err){
+      return res.status(403).json({
+        status: "fail",
+        message: "token is not valid",
+      });
+    }
+
+    const postId=req.params.id;
+    const q = 'DELETE FROM posts WHERE `id`= ? AND `uid` = ?'
+    db.query(q,[postId, userInfo.id],(err,data)=>{
+     if (err) {
+       return res.status(403).json({
+         status: "fail",
+         message: "you can delete only your own post",
+       });
+     }
+     return res.json({
+      status: "success",
+      messgae:'Post has been deleted successfully'
+     })
+    })
+
+  });
+
+
+
+   res.json({
     status: "status",
     mesage: "connected",
   });
