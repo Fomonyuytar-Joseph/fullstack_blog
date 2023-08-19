@@ -15,15 +15,29 @@ app.use(express.urlencoded({ extended: false }));
 app.use(morgan("dev"));
 app.use(cookieParser());
 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "./uploads");
+  },
+  filename: function (req, file, cb) {
+    // const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, Date().now+file.fieldname);
+  },
+});
 
-const upload = multer({dest:'uploads/'})
+const upload = multer({ storage: storage });
+
+
+// const upload = multer({dest:'./uploads/'})
 
 
 app.post('/api/v1/upload' ,upload.single('file'),(re,res)=>{
+    const file = req.file
 
     res.status(200).json({
         status: 'success',
-        message:' successfully uploaded'
+        message:' successfully uploaded',
+        file:file.filename
     })
 
 })

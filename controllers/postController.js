@@ -30,7 +30,7 @@ const q = req.query.cat
 export const getPost = (req, res) => {
 
 
-  const q= "SELECT `username`, `title`, `descr`,`cat`,`date` FROM users JOIN posts ON users.id = posts.uid WHERE posts.id = ? "
+  const q= "SELECT `posts.id` `username`, `title`, `descr`,`cat`,`date` FROM users JOIN posts ON users.id = posts.uid WHERE posts.id = ? "
 
   db.query(q,[req.params.id *1],(err,data)=>{
      if (err) {
@@ -50,10 +50,48 @@ export const getPost = (req, res) => {
  
 };
 export const addPost = (req, res) => {
-  res.json({
-    status: "status",
-    mesage: "connected",
-  });
+   const token = req.cookies.access_token;
+
+   if (!token) {
+     return res.status(401).json({
+       status: "fail",
+       message: "not authenticated",
+     });
+   }
+
+   jwt.verify(token, "jwtkey", (err, userInfo) => {
+     if (err) {
+       return res.status(403).json({
+         status: "fail",
+         message: "token is not valid",
+       });
+     }
+
+    
+     const q = "INSERT INTO  posts(`title`,`desc`,`img`,`cat`,`date`,`uid`) VALUES (?)";
+const values =[
+  req.body.title,
+  req.body.desc,
+  req.body.img,
+  req.body.cat,
+  req.body.date,
+]
+
+     db.query(q, [values], (err, data) => {
+       if (err) {
+         return res.status(500).json({
+           status: "fail",
+           message: "you can delete only your own post",
+         });
+       }
+       return res.json({
+         status: "success",
+         messgae: "Post has been created successfully",
+       });
+     });
+   });
+  
+  
 };
 export const deletePost = (req, res) => {
   const token = req.cookies.access_token;
@@ -94,14 +132,48 @@ export const deletePost = (req, res) => {
 
 
 
-   res.json({
-    status: "status",
-    mesage: "connected",
-  });
+ 
 };
 export const updatePost = (req, res) => {
-  res.json({
-    status: "status",
-    mesage: "connected",
-  });
+   const token = req.cookies.access_token;
+     const postId = req.params.id;
+
+   if (!token) {
+     return res.status(401).json({
+       status: "fail",
+       message: "not authenticated",
+     });
+   }
+
+   jwt.verify(token, "jwtkey", (err, userInfo) => {
+     if (err) {
+       return res.status(403).json({
+         status: "fail",
+         message: "token is not valid",
+       });
+     }
+
+     const q =
+       "UPDATE posts `title`=? , `desc`=? ,`img`=?,`cat`=? WHERE `ID`=? AND ` desc=? AND `uid`=?";
+     const values = [
+       req.body.title,
+       req.body.desc,
+       req.body.img,
+       req.body.cat,
+       req.body.date,
+     ];
+
+     db.query(q, [...values,postId,userInfo.id], (err, data) => {
+       if (err) {
+         return res.status(500).json({
+           status: "fail",
+           message: "you can update only your own post",
+         });
+       }
+       return res.json({
+         status: "success",
+         message: "Post has been updated successfully",
+       });
+     });
+   });
 };
